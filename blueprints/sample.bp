@@ -1,0 +1,255 @@
+{
+  {
+    connections = {
+      ["1"] = {
+        red = {
+          {
+            circuit_id = 1,
+            entity_id = 2
+          } --[[table: 0x00007f585fdb1c40]],
+          {
+            circuit_id = 1,
+            entity_id = 3
+          } --[[table: 0x00007f585fdb1ca0]]
+        } --[[table: 0x00007f585fdb1be0]]
+      } --[[table: 0x00007f585fdb1b80]]
+    } --[[table: 0x00007f582c169b60]],
+    entity_number = 1,
+    name = "medium-electric-pole",
+    position = {
+      x = -5,
+      y = -2
+    } --[[table: 0x00007f582c169a10]]
+  } --[[table: 0x00007f582c1699b0]],
+  {
+    connections = {
+      ["1"] = {
+        red = {
+          {
+            entity_id = 1
+          } --[[table: 0x00007f582c1eabf0]]
+        } --[[table: 0x00007f582c288500]]
+      } --[[table: 0x00007f582c2884a0]],
+      ["2"] = {
+        green = {
+          {
+            circuit_id = 1,
+            entity_id = 5
+          } --[[table: 0x00007f582c1f41e0]]
+        } --[[table: 0x00007f582c1f4180]]
+      } --[[table: 0x00007f582c1eac50]]
+    } --[[table: 0x00007f582c1eada0]],
+    control_behavior = {
+      decider_conditions = {
+        comparator = ">",
+        constant = 2,
+        copy_count_from_input = false,
+        first_signal = {
+          name = "signal-green",
+          type = "virtual"
+        } --[[table: 0x00007f582c02f1f0]],
+        output_signal = {
+          name = "signal-black",
+          type = "virtual"
+        } --[[table: 0x00007f582c288590]]
+      } --[[table: 0x00007f582c1ead40]]
+    } --[[table: 0x00007f582c1eace0]],
+    direction = 2,
+    entity_number = 2,
+    name = "decider-combinator",
+    position = {
+      x = -2.5,
+      y = -2
+    } --[[table: 0x00007f582c02f110]]
+  } --[[table: 0x00007f585ff8dc10]],
+  {
+    connections = {
+      ["1"] = {
+        red = {
+          {
+            entity_id = 1
+          } --[[table: 0x00007f582c23ad80]]
+        } --[[table: 0x00007f582c23ad20]]
+      } --[[table: 0x00007f582c1abd30]],
+      ["2"] = {
+        red = {
+          {
+            circuit_id = 1,
+            entity_id = 5
+          } --[[table: 0x00007f582c1815b0]]
+        } --[[table: 0x00007f582c181550]]
+      } --[[table: 0x00007f582c1814f0]]
+    } --[[table: 0x00007f582c1abcd0]],
+    control_behavior = {
+      arithmetic_conditions = {
+        constant = 0,
+        first_signal = {
+          name = "signal-green",
+          type = "virtual"
+        } --[[table: 0x00007f582c23aed0]],
+        operation = "+",
+        output_signal = {
+          name = "signal-red",
+          type = "virtual"
+        } --[[table: 0x00007f582c1abc70]]
+      } --[[table: 0x00007f582c23ae70]]
+    } --[[table: 0x00007f582c23ae10]],
+    direction = 2,
+    entity_number = 3,
+    name = "arithmetic-combinator",
+    position = {
+      x = -2.5,
+      y = 0
+    } --[[table: 0x00007f582c1c0dc0]]
+  } --[[table: 0x00007f582c1f4340]],
+  {
+    connections = {
+      ["1"] = {
+        green = {
+          {
+            circuit_id = 1,
+            entity_id = 5
+          } --[[table: 0x00007f582c264a50]]
+        } --[[table: 0x00007f582c2649f0]],
+        red = {
+          {
+            entity_id = 7
+          } --[[table: 0x00007f582c17fdb0]]
+        } --[[table: 0x00007f582c17fd50]]
+      } --[[table: 0x00007f582c20d430]],
+      ["2"] = {
+        green = {
+          {
+            entity_id = 6
+          } --[[table: 0x00007f582c1151f0]]
+        } --[[table: 0x00007f582c115190]]
+      } --[[table: 0x00007f582c115130]]
+    } --[[table: 0x00007f582c167be0]],
+    control_behavior = {
+      decider_conditions = {
+        comparator = "=",
+        constant = 0,
+        copy_count_from_input = true,
+        first_signal = {
+          name = "signal-black",
+          type = "virtual"
+        } --[[table: 0x00007f582c264910]],
+        output_signal = {
+          name = "signal-everything",
+          type = "virtual"
+        } --[[table: 0x00007f582c17fcf0]]
+      } --[[table: 0x00007f582c2648b0]]
+    } --[[table: 0x00007f582c2131e0]],
+    direction = 2,
+    entity_number = 4,
+    name = "decider-combinator",
+    position = {
+      x = 0.5,
+      y = 0
+    } --[[table: 0x00007f582c1f5800]]
+  } --[[table: 0x00007f582c165bb0]],
+  {
+    connections = {
+      ["1"] = {
+        green = {
+          {
+            circuit_id = 2,
+            entity_id = 2
+          } --[[table: 0x00007f582c16e0a0]],
+          {
+            circuit_id = 1,
+            entity_id = 4
+          } --[[table: 0x00007f582c16e1c0]]
+        } --[[table: 0x00007f582c16e040]],
+        red = {
+          {
+            circuit_id = 2,
+            entity_id = 3
+          } --[[table: 0x00007f582c17dfb0]]
+        } --[[table: 0x00007f582c2267d0]]
+      } --[[table: 0x00007f582c226770]],
+      ["2"] = {
+        green = {
+          {
+            entity_id = 6
+          } --[[table: 0x00007f582c0e1640]]
+        } --[[table: 0x00007f582c26a440]]
+      } --[[table: 0x00007f582c26a3e0]]
+    } --[[table: 0x00007f582c24eb00]],
+    control_behavior = {
+      decider_conditions = {
+        comparator = "=",
+        constant = 1,
+        copy_count_from_input = true,
+        first_signal = {
+          name = "signal-black",
+          type = "virtual"
+        } --[[table: 0x00007f582c226690]],
+        output_signal = {
+          name = "signal-red",
+          type = "virtual"
+        } --[[table: 0x00007f582c1f44f0]]
+      } --[[table: 0x00007f582c226630]]
+    } --[[table: 0x00007f582c17e0a0]],
+    direction = 2,
+    entity_number = 5,
+    name = "decider-combinator",
+    position = {
+      x = 0.5,
+      y = -1
+    } --[[table: 0x00007f582c17ded0]]
+  } --[[table: 0x00007f582c1fbb00]],
+  {
+    connections = {
+      ["1"] = {
+        green = {
+          {
+            circuit_id = 2,
+            entity_id = 5
+          } --[[table: 0x00007f582c1e4970]],
+          {
+            circuit_id = 2,
+            entity_id = 4
+          } --[[table: 0x00007f582c1e49d0]]
+        } --[[table: 0x00007f582c1e4910]]
+      } --[[table: 0x00007f582c1e48b0]]
+    } --[[table: 0x00007f582c2760c0]],
+    entity_number = 6,
+    name = "medium-electric-pole",
+    position = {
+      x = 4,
+      y = -1
+    } --[[table: 0x00007f582c275ef0]]
+  } --[[table: 0x00007f582c1fbc50]],
+  {
+    connections = {
+      ["1"] = {
+        red = {
+          {
+            circuit_id = 1,
+            entity_id = 4
+          } --[[table: 0x00007f582c1d3040]]
+        } --[[table: 0x00007f582c257630]]
+      } --[[table: 0x00007f582c2575d0]]
+    } --[[table: 0x00007f582c166070]],
+    control_behavior = {
+      filters = {
+        {
+          count = 5,
+          index = 1,
+          signal = {
+            name = "signal-red",
+            type = "virtual"
+          } --[[table: 0x00007f582c221680]]
+        } --[[table: 0x00007f582c257780]]
+      } --[[table: 0x00007f582c257720]]
+    } --[[table: 0x00007f582c2576c0]],
+    direction = 2,
+    entity_number = 7,
+    name = "constant-combinator",
+    position = {
+      x = -3,
+      y = 1
+    } --[[table: 0x00007f582c1ceb90]]
+  } --[[table: 0x00007f582c1ceab0]]
+} --[[table: 0x00007f582c1fdcc0]]
