@@ -1,0 +1,32 @@
+# EBNF description of netlist language 
+
+@@grammar :: Netlist
+@@eol_comments :: /#.*?$/
+
+start 					= file $ ;
+file 					= { NEWLINE | lines:line} ;
+NEWLINE					= /[\r\n]+/ ;
+
+line 					= [OutNets:netlist '<='] [InNets:netlist] ':' Descriptor:descriptor ;
+netlist 				= ','.{name}+ ;
+
+name 					= /[A-Za-z0-9_]+/ ;
+
+descriptor              = decider_descriptor | constant_descriptor | arithmetic_descriptor | factorio_name;
+
+decider_descriptor      = out_type signal 'if' signal comparator channel ;
+out_type                = '1' | '@' ;
+comparator              = '>' | '=' | '<' ;
+
+constant_descriptor     = ','.{constant signal}+ ;
+
+arithmetic_descriptor   = signal '=' signal operator channel ;
+operator                = '+' | '-' | '/' | '*' ;
+
+channel                 = signal | constant ;
+signal 					= full_signal | alpha_signal | special_signal ;
+factorio_name			= /[A-Za-z0-9\-]+/ ;
+full_signal				= factorio_name ;
+alpha_signal			= /[A-Z]/ ;
+special_signal			= 'each' | 'any' | 'all' ;
+constant                = /[\-]?[1-9][0-9]*/ ;
