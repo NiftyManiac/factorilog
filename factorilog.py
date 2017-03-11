@@ -231,7 +231,7 @@ class NetlistSemantics(ModelBuilderSemantics):
 
 class Layout:
     def __init__(self):
-        self.ents = set()
+        self.entities = set()
         self.hyperwires = set()
         self.flags = {"hyperwires_named": False,
                        "meta_valid": False}
@@ -245,7 +245,7 @@ class Layout:
 
         for lua_ent in bp:
             ent = CircuitEnt.fromName(lua_ent["name"],lua_ent)
-            self.ents.add(ent)
+            self.entities.add(ent)
             ents_by_id[lua_ent["entity_number"]] = ent
         
         for lua_ent in bp:
@@ -268,7 +268,35 @@ class Layout:
         return self
 
     def exportBlueprint(self):
-        pass
+        if not self.flags["meta_valid"]:
+            raise RuntimeError("Cannot produce blueprint without valid meta info")
+
+        blueprint = []
+        for ent in self.entities:
+            ent_bp = {}
+            ent_bp["connections"] = {}
+            for i,term in enumerate(ent.terminals):
+                bp_term = str(i+1)
+                bp_wires_by_color = defaultdict(list)
+                for wire in term.wires:
+                    other_term = list(wire.terminals - {term})[0]
+                    other_ent = other_term.ent
+                    circuit_id = other_ent.terminal_types[other_term.type]+1
+
+                    bp_wires_by_color[wire.color.name].append(
+                        {"circuit_id": circuit_id, "entity_id": other_ent.number})
+                
+                ent_bp["connections"][bp_term] = bp_wires_by_color
+                ent_bp["entity_number"] = ent.number
+                ent_bp["name"] = ent.name
+                ent_bp["position"] = ent.position
+                if hasattr(ent, "direction"):
+                    ent_bp["direction"] = ent.direction.value
+                if hasattr(ent, "behavior"):
+                    ent_bp["control_behavior"] = ent.behavior
+            blueprint.append(ent_bp)
+        blueprint.sort(key=lambda ent_bp: ent_bp["entity_number"])
+        return blueprint
 
     @classmethod
     def fromNetlist(class_, netlist):
@@ -342,7 +370,7 @@ class Layout:
                     terminal.wires.add(wire)
 
         self = Layout()
-        self.ents = entities
+        self.entities = entities
         self.hyperwires = set(hyperwires.values())
         self.assignHyperwiresToTerminals()
         self.flags["meta_valid"] = meta
@@ -379,7 +407,7 @@ class Layout:
         self.hyperwires = set()
         explored = {color:set() for color in WireColor}
 
-        for ent in self.ents:
+        for ent in self.entities:
             for term in ent.terminals:
                 for color in WireColor:
                     if term not in explored[color]:
@@ -424,7 +452,7 @@ class Layout:
 
         # generate string for each entity
         strings = []
-        for ent in sorted(self.ents, key=lambda e: e.number):
+        for ent in sorted(self.entities, key=lambda e: e.number):
             strings.append(ent.toNetString(meta))
 
         if meta:
