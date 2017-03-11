@@ -4,29 +4,46 @@
 @@eol_comments :: /#.*?$/
 
 start 					= file $ ;
-file 					= { NEWLINE | lines:line} ;
+file 					= {NEWLINE | Entities:netline} ['||' {NEWLINE | Metadata:metaline}];
 NEWLINE					= /[\r\n]+/ ;
 
-line 					= [OutNets:netlist '<='] [InNets:netlist] ':' Descriptor:descriptor ;
+netline 					= [OutNets:netlist '<='] [InNets:netlist] ':' Descriptor:descriptor ['|' ID:ent_id];
 netlist 				= ','.{name}+ ;
 
-name 					= /[A-Za-z0-9_]+/ ;
+name 					= /[A-Za-z_][A-Za-z0-9_]*/ ;
+ent_id 					= uint ;
 
-descriptor              = decider_descriptor | constant_descriptor | arithmetic_descriptor | factorio_name;
+descriptor              = decider_descriptor | constant_descriptor | arithmetic_descriptor | entity_descriptor;
 
-decider_descriptor      = out_type signal 'if' signal comparator channel ;
+decider_descriptor      = OutType:out_type OutSig:signal 'if' Op1:signal Comparator:comparator Op2:channel ;
 out_type                = '1' | '@' ;
 comparator              = '>' | '=' | '<' ;
 
-constant_descriptor     = ','.{constant signal}+ ;
+constant_descriptor     = ','.{signal_with_value}+ ;
+signal_with_value		= Value:int Signal:signal ;
 
-arithmetic_descriptor   = signal '=' signal operator channel ;
+arithmetic_descriptor   = OutSig:signal '=' Op1:signal Operator:operator Op2:channel ;
 operator                = '+' | '-' | '/' | '*' ;
 
-channel                 = signal | constant ;
+entity_descriptor		= factorio_name ;
+
+channel                 = signal | int;
 signal 					= full_signal | alpha_signal | special_signal ;
 factorio_name			= /[A-Za-z0-9\-]+/ ;
 full_signal				= factorio_name ;
 alpha_signal			= /[A-Z]/ ;
 special_signal			= 'each' | 'any' | 'all' ;
-constant                = /[\-]?[1-9][0-9]*/ ;
+
+metaline				= ent_meta | net_meta ;
+ent_meta				= ID:ent_id '|' X:(float | int) Y:(float | int) [Direction:direction] ;
+direction				= 'N' | 'S' | 'E' | 'W' ;
+net_meta				= Name:name '|' Color:wire_color {Wires+:WIRE} ;
+WIRE					= Terminals:TERMINAL '-' Terminals:TERMINAL ;
+wire_color 				= 'red' | 'green' ;
+TERMINAL				= ID:ent_id Type:['i' | 'o' | 'p'] ;
+
+uint::int 					= /(0|[1-9][0-9]*)/ ;
+int::int					= /(0|[\-]?[1-9][0-9]*)/ ;
+float::float				= /[\-]?[0-9]*\.[0-9]+/ ;
+#@override
+#float = /[\-]?[0-9]*[\.[0-9]+]?/ ;
