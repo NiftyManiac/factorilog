@@ -1,15 +1,27 @@
 ## Factorio HDL Project
 
-###Roughly complete:
+### Install dependencies:
+```
+pip install -r requirements.txt
+```
 
-* Blueprint import
+### Usage:
+```
+./netlist.py -h
+```
+
+###Complete:
+* Supported entities:
+  * Combinators
+  * Power poles/substations
+* Blueprint string import and export
+* Entity table import and export (get/set_blueprint_entities())
+* Netlist import and export
 * Blueprint->Netlist (abstraction)
-* Netlist export
+* Netlist with metadata->Blueprint
 
 ### Todo:
 
-* Blueprint export
-* Netlist import
-* Netlist->Blueprint (layout)
+* Bare netlist->Blueprint (auto layout)
 * HDL implementation
 * HDL compilation
