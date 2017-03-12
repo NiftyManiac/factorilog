@@ -2,6 +2,8 @@
 # Blueprint import/export
 
 from slpp import slpp as lua
+import re
+import base64, gzip
 
 from factorilog import Layout, Wire, WireColor, CircuitEnt, Direction
 
@@ -20,26 +22,50 @@ def buildEntFromBlueprint(ent_bp):
   return ent
 
 
-def importBlueprint(lua_blueprint):
+def importBlueprint(blueprint, string = True):
   """ 
   Convert lua blueprint to Layout.
-  Blueprint is obtained via 
+  If string==True, expect blueprint string (gzip+base64)
+  Otherwise, expect lua table obtained via
   "/c serpent.line(game.player.cursor_stack.get_blueprint_entities()):
   """
+
+  # Decode blueprint string
+  if string:
+    blueprint = gzip.decompress(base64.b64decode(blueprint)).decode("utf-8")
+
+  # strip any serpent-made lua around the table
+  table = re.search(r'\{.*\}', blueprint, re.DOTALL)
+  if table:
+    bp = lua.decode(table.group(0))
+  else:
+    raise RuntimeError("Could not parse blueprint")
+
   layout = Layout()
-  bp = lua.decode(lua_blueprint)
   ents_by_id = {} # lua form of entities indexed by id
   wires = set()
 
-  for lua_ent in bp:
-    ent = buildEntFromBlueprint(lua_ent)
+  if "entities" in bp:
+    bp_entities = bp["entities"]
+  else:
+    bp_entities = bp
+
+  # blueprint entities contain entity_numbers, but blueprint stringifiers remove it
+  if "entity_number" not in bp_entities[0]:
+    for i, bp_entity in enumerate(bp_entities, 1):
+      bp_entity["entity_number"] = i 
+
+  # Create all entities 
+  for bp_ent in bp_entities:
+    ent = buildEntFromBlueprint(bp_ent)
 
     layout.entities.add(ent)
-    ents_by_id[lua_ent["entity_number"]] = ent
+    ents_by_id[bp_ent["entity_number"]] = ent
   
-  for lua_ent in bp:
-    for term_i,lua_terminal in lua_ent["connections"].items():
-      source_term = ents_by_id[lua_ent["entity_number"]].terminals[int(term_i)-1]
+  # Create all wires
+  for bp_ent in bp_entities:
+    for term_i,lua_terminal in bp_ent["connections"].items():
+      source_term = ents_by_id[bp_ent["entity_number"]].terminals[int(term_i)-1]
       for color,lua_wires in lua_terminal.items():
         for lua_wire in lua_wires:
           if "circuit_id" in lua_wire:
@@ -56,16 +82,17 @@ def importBlueprint(lua_blueprint):
   layout.flags["meta_valid"] = True
   return layout
 
-def exportBlueprint(layout):
+def exportBlueprint(layout, string = True):
   """
   Convert Layout to lua blueprint.
-  Blueprint can be used via
+  If string==True, outputs a blueprint string (gzip+base64)
+  Otherwise, blueprint can be used via
   "/c game.player.cursor_stack.set_blueprint_entities(blueprint)"
   """
   if not layout.flags["meta_valid"]:
       raise RuntimeError("Cannot produce blueprint without valid meta info")
 
-  blueprint = []
+  bp_entities = []
   for ent in layout.entities:
     ent_bp = {}
     ent_bp["connections"] = {}
@@ -88,6 +115,14 @@ def exportBlueprint(layout):
         ent_bp["direction"] = ent.direction.value
       if hasattr(ent, "behavior"):
         ent_bp["control_behavior"] = ent.behavior
-    blueprint.append(ent_bp)
-  blueprint.sort(key=lambda ent_bp: ent_bp["entity_number"])
-  return lua.encode(blueprint)
+    bp_entities.append(ent_bp)
+  bp_entities.sort(key=lambda ent_bp: ent_bp["entity_number"])
+  blueprint = {"entities": bp_entities}
+  lua_blueprint = lua.encode(blueprint)
+  lua_blueprint = "do local _="+lua_blueprint+";return _;end"
+
+   # Encode blueprint string
+  if string:
+    bp_string = base64.b64encode(gzip.compress(lua_blueprint.encode('utf-8'))).decode('utf-8')
+    return bp_string
+  return lua_blueprint
