@@ -65,6 +65,7 @@ def importNetlist(netlist):
   hyperwire_meta = {} #by name
   entity_meta = {} #by id
   entities = set()
+  meta = bool(ast.Metadata) # Netlist includes metadata
   # TODO cleanup here
   if ast.Metadata:
     for meta_ast in ast.Metadata:

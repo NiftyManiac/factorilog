@@ -1,54 +1,69 @@
 #!/usr/bin/env python
 import argparse
+import sys
 import blueprint_layer as BlueprintLayer
 import netlist_layer as NetlistLayer
 
-parser = argparse.ArgumentParser(description="Translate between blueprints and netlists",
-  usage="\n%(prog)s -h\
-         \n%(prog)s -n NETLIST [--raw-blueprint] -o OUTFILE\
-         \n%(prog)s -b BLUEPRINT [--no-meta] -o OUTFILE")
+def convert(args):
+  output = None
+  if args.blueprint and args.netlist:
+    parser.print_help()
 
-netlist = parser.add_argument_group("Netlist->Blueprint")
-netlist.add_argument('-n','--netlist', help="Filename of input netlist")
-netlist.add_argument('--raw-blueprint', action="store_true", help="Output Lua blueprint instead of blueprint string")
+  elif args.blueprint:
+    with open(args.blueprint, 'r') as bp_file:
+      bp = bp_file.read()
 
-blueprint = parser.add_argument_group("Blueprint->Netlist")
-blueprint.add_argument('-b','--blueprint', help="Filename of input blueprint string or Lua blueprint spec")
-blueprint.add_argument('--no-meta', action="store_true", help="Don't include metadata")
+    try:
+      layout = BlueprintLayer.importBlueprint(bp, string=True)
+    except OSError:
+      layout = BlueprintLayer.importBlueprint(bp, string=False)
 
-req = parser.add_argument_group("required arguments")
-req.add_argument('-o','--outfile', required=True, help="Filename of output file")
+    output = NetlistLayer.exportNetlist(layout, meta=not args.no_meta)
+    message = "Wrote {name} to file {filename}".format(
+      name = "netlist" + (" with metadata" if not args.no_meta else ""),
+      filename = args.outfile)
 
-args = parser.parse_args()
-print(args)
+  elif args.netlist:
+    with open(args.netlist, 'r') as net_file:
+      netlist = net_file.read()
 
-output = None
-if args.blueprint and args.netlist:
-  parser.print_help()
+    layout = NetlistLayer.importNetlist(netlist)
+    output = BlueprintLayer.exportBlueprint(layout, string=not args.entity_table)
+    message = "Wrote {name} to file {filename}".format(
+      name = "blueprint string" if not args.entity_table else "entity table",
+      filename = args.outfile)
 
-elif args.blueprint:
-  with open(args.blueprint, 'r') as bp_file:
-    bp = bp_file.read()
+  else:
+    parser.print_help()
 
-  try:
-    layout = BlueprintLayer.importBlueprint(bp, string=True)
-  except OSError:
-    layout = BlueprintLayer.importBlueprint(bp, string=False)
+  if output:
+    with open(args.outfile, 'w') as out_file:
+      out_file.write(output)
+    print(message)
 
-  output = NetlistLayer.exportNetlist(layout, meta=not args.no_meta)
+if __name__=="__main__":
+  parser = argparse.ArgumentParser(description="Translate between blueprints and netlists",
+    usage="\n%(prog)s -h\
+           \n%(prog)s -n NETLIST [--entities-only] -o OUTFILE\
+           \n%(prog)s -b BLUEPRINT [--no-meta] -o OUTFILE")
 
-elif args.netlist:
-  with open(args.netlist, 'r') as net_file:
-    netlist = net_file.read()
 
-  layout = NetlistLayer.importNetlist(netlist)
-  output = BlueprintLayer.exportBlueprint(layout, string=not args.raw_blueprint)
+  netlist = parser.add_argument_group("Netlist->Blueprint")
+  netlist.add_argument('-n','--netlist', help="Filename of input netlist")
+  netlist.add_argument('--entity-table', action="store_true", help="Output Lua entity table instead of blueprint string")
 
-else:
-  parser.print_help()
+  blueprint = parser.add_argument_group("Blueprint->Netlist")
+  blueprint.add_argument('-b','--blueprint', help="Filename of input blueprint string or Lua entity table")
+  blueprint.add_argument('--no-meta', action="store_true", help="Don't include metadata (positions, wire colors, etc)")
 
-if output:
-  with open(args.outfile, 'w') as out_file:
-    out_file.write(output)
+  req = parser.add_argument_group("required arguments")
+  req.add_argument('-o','--outfile', required=True, help="Filename of output file")
 
+  if len(sys.argv)==1:
+    parser.print_help()
+    sys.exit(1)
+
+  args = parser.parse_args()
+
+  convert(args)
 
