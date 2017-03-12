@@ -59,16 +59,23 @@ def importNetlist(netlist):
   parser = NetlistParser(parseinfo=False)
   ast = parser.parse(netlist, rule_name='start', semantics=NetlistSemantics())
 
+  layout = Layout()
+
   # Catalog all metadata and create hyperwires
   hyperwire_meta = {} #by name
   entity_meta = {} #by id
   entities = set()
+  # TODO cleanup here
   if ast.Metadata:
     for meta_ast in ast.Metadata:
-      if "Name" in meta_ast: # hyperwire metadata
-        hyperwire_meta[meta_ast.Name] = meta_ast
-      else: # entity metadata
+      if "WireName" in meta_ast: # hyperwire metadata
+        hyperwire_meta[meta_ast.WireName] = meta_ast
+      elif "ID" in meta_ast: # entity metadata
         entity_meta[meta_ast.ID] = meta_ast
+      elif "Name" in meta_ast:
+        layout.meta["name"] = meta_ast.Name
+      elif "Names" in meta_ast:
+        layout.meta["icons"] = [signalFromString(name) for name in meta_ast.Names]
 
   # Create entities and hyperwires from netspec
   metadata_labels = 0
@@ -125,7 +132,6 @@ def importNetlist(netlist):
       for terminal in terminals:
         terminal.wires.add(wire)
 
-  layout = Layout()
   layout.entities = entities
   layout.hyperwires = set(hyperwires.values())
   layout.assignHyperwiresToTerminals()
@@ -194,6 +200,15 @@ def getWireMetaString(wire):
   return "{name} | {color} {wires}".format(name=wire.name, 
         color=wire.color.name, wires=" ".join(wire_strings))
 
+def getLayoutMetaString(layout):
+  meta_strs = []
+  if "name" in layout.meta:
+    meta_strs.append("name || "+layout.meta["name"])
+  if "icons" in layout.meta:
+    meta_strs.append("icons || "+" ".join(
+      signalToString(sig) for sig in layout.meta["icons"]))
+  return "\n".join(meta_strs)
+
 def entInterfacesToString(interfaces):
   elements = []
   for type_ in [TermType["out"], TermType["in"], TermType["pass"]]:
@@ -237,7 +252,10 @@ def exportNetlist(layout, meta = False):
   if meta:
     net_strs, ent_meta_strs = zip(*strings)
     hyper_meta_strs = tuple(getWireMetaString(hyper) for hyper in layout.hyperwires)
+    global_meta_str = getLayoutMetaString(layout)
     meta_strs = ent_meta_strs + hyper_meta_strs
+    if global_meta_str:
+      meta_strs = (global_meta_str,) + meta_strs
 
     max_tab = max(s.find('\t') for s in net_strs)
     return "{nets}\n||\n{metas}".format(

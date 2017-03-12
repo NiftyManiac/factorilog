@@ -2,10 +2,11 @@
 
 @@grammar :: Netlist
 @@eol_comments :: /#.*?$/
+@@whitespace :: /[\t ]+/
 
 start 					= file $ ;
-file 					= {NEWLINE | Entities:netline} ['||' {NEWLINE | Metadata:metaline}];
-NEWLINE					= /[\r\n]+/ ;
+file 					= {newline | Entities:netline} ['||' {newline | Metadata:metaline}];
+newline					= /[\r\n]+/ | $ ;
 
 netline 					= [OutNets:netlist '<='] [InNets:netlist] ':' Descriptor:descriptor ['|' ID:ent_id];
 netlist 				= ','.{name}+ ;
@@ -34,16 +35,17 @@ full_signal				= factorio_name ;
 alpha_signal			= /[A-Z]/ ;
 special_signal			= 'each' | 'any' | 'all' ;
 
-metaline				= ent_meta | net_meta ;
+metaline				= @:(ent_meta | net_meta | global_meta) newline;
 ent_meta				= ID:ent_id '|' X:(float | int) Y:(float | int) [Direction:direction] ;
 direction				= 'N' | 'S' | 'E' | 'W' ;
-net_meta				= Name:name '|' Color:wire_color {Wires+:WIRE} ;
+net_meta				= WireName:name '|' Color:wire_color {Wires+:WIRE} ;
 WIRE					= Terminals:TERMINAL '-' Terminals:TERMINAL ;
 wire_color 				= 'red' | 'green' ;
 TERMINAL				= ID:ent_id Type:['i' | 'o' | 'p'] ;
+global_meta     = global_name | global_icons ;
+global_name     = "name" '||' Name:/.*/ ;
+global_icons    = 'icons' '||' Names:{factorio_name}+ ;
 
 uint::int 					= /(0|[1-9][0-9]*)/ ;
 int::int					= /(0|[\-]?[1-9][0-9]*)/ ;
 float::float				= /[\-]?[0-9]*\.[0-9]+/ ;
-#@override
-#float = /[\-]?[0-9]*[\.[0-9]+]?/ ;

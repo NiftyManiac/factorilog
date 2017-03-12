@@ -25,7 +25,7 @@ class NetlistBuffer(Buffer):
     def __init__(
         self,
         text,
-        whitespace=None,
+        whitespace=re.compile('[\\t ]+', RE_FLAGS | re.DOTALL),
         nameguard=None,
         comments_re=None,
         eol_comments_re='#.*?$',
@@ -48,7 +48,7 @@ class NetlistBuffer(Buffer):
 class NetlistParser(Parser):
     def __init__(
         self,
-        whitespace=None,
+        whitespace=re.compile('[\\t ]+', RE_FLAGS | re.DOTALL),
         nameguard=None,
         comments_re=None,
         eol_comments_re='#.*?$',
@@ -87,7 +87,7 @@ class NetlistParser(Parser):
         def block0():
             with self._choice():
                 with self._option():
-                    self._NEWLINE_()
+                    self._newline_()
                 with self._option():
                     self._netline_()
                     self.name_last_node('Entities')
@@ -99,7 +99,7 @@ class NetlistParser(Parser):
             def block3():
                 with self._choice():
                     with self._option():
-                        self._NEWLINE_()
+                        self._newline_()
                     with self._option():
                         self._metaline_()
                         self.name_last_node('Metadata')
@@ -111,8 +111,13 @@ class NetlistParser(Parser):
         )
 
     @graken()
-    def _NEWLINE_(self):
-        self._pattern(r'[\r\n]+')
+    def _newline_(self):
+        with self._choice():
+            with self._option():
+                self._pattern(r'[\r\n]+')
+            with self._option():
+                self._check_eof()
+            self._error('expecting one of: [\\r\\n]+')
 
     @graken()
     def _netline_(self):
@@ -303,12 +308,17 @@ class NetlistParser(Parser):
 
     @graken()
     def _metaline_(self):
-        with self._choice():
-            with self._option():
-                self._ent_meta_()
-            with self._option():
-                self._net_meta_()
-            self._error('no available options')
+        with self._group():
+            with self._choice():
+                with self._option():
+                    self._ent_meta_()
+                with self._option():
+                    self._net_meta_()
+                with self._option():
+                    self._global_meta_()
+                self._error('no available options')
+        self.name_last_node('@')
+        self._newline_()
 
     @graken()
     def _ent_meta_(self):
@@ -355,7 +365,7 @@ class NetlistParser(Parser):
     @graken()
     def _net_meta_(self):
         self._name_()
-        self.name_last_node('Name')
+        self.name_last_node('WireName')
         self._token('|')
         self._wire_color_()
         self.name_last_node('Color')
@@ -365,7 +375,7 @@ class NetlistParser(Parser):
             self.add_last_node_to_name('Wires')
         self._closure(block2)
         self.ast._define(
-            ['Color', 'Name'],
+            ['Color', 'WireName'],
             ['Wires']
         )
 
@@ -409,6 +419,40 @@ class NetlistParser(Parser):
             []
         )
 
+    @graken()
+    def _global_meta_(self):
+        with self._choice():
+            with self._option():
+                self._global_name_()
+            with self._option():
+                self._global_icons_()
+            self._error('no available options')
+
+    @graken()
+    def _global_name_(self):
+        self._token('name')
+        self._token('||')
+        self._pattern(r'.*')
+        self.name_last_node('Name')
+        self.ast._define(
+            ['Name'],
+            []
+        )
+
+    @graken()
+    def _global_icons_(self):
+        self._token('icons')
+        self._token('||')
+
+        def block1():
+            self._factorio_name_()
+        self._positive_closure(block1)
+        self.name_last_node('Names')
+        self.ast._define(
+            ['Names'],
+            []
+        )
+
     @graken('int')
     def _uint_(self):
         self._pattern(r'(0|[1-9][0-9]*)')
@@ -429,7 +473,7 @@ class NetlistSemantics(object):
     def file(self, ast):
         return ast
 
-    def NEWLINE(self, ast):
+    def newline(self, ast):
         return ast
 
     def netline(self, ast):
@@ -508,6 +552,15 @@ class NetlistSemantics(object):
         return ast
 
     def TERMINAL(self, ast):
+        return ast
+
+    def global_meta(self, ast):
+        return ast
+
+    def global_name(self, ast):
+        return ast
+
+    def global_icons(self, ast):
         return ast
 
     def uint(self, ast):

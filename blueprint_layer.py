@@ -45,6 +45,12 @@ def importBlueprint(blueprint, string = True):
   ents_by_id = {} # lua form of entities indexed by id
   wires = set()
 
+  if "name" in bp:
+    layout.meta["name"] = bp["name"]
+
+  if "icons" in bp:
+    layout.meta["icons"] = [elem["signal"] for elem in sorted(bp["icons"], key=lambda e: e["index"])]
+
   if "entities" in bp:
     bp_entities = bp["entities"]
   else:
@@ -86,7 +92,7 @@ def exportBlueprint(layout, string = True):
   """
   Convert Layout to lua blueprint.
   If string==True, outputs a blueprint string (gzip+base64)
-  Otherwise, blueprint can be used via
+  Otherwise, blueprint is an entity list that can be used via
   "/c game.player.cursor_stack.set_blueprint_entities(blueprint)"
   """
   if not layout.flags["meta_valid"]:
@@ -117,12 +123,28 @@ def exportBlueprint(layout, string = True):
         ent_bp["control_behavior"] = ent.behavior
     bp_entities.append(ent_bp)
   bp_entities.sort(key=lambda ent_bp: ent_bp["entity_number"])
-  blueprint = {"entities": bp_entities}
-  lua_blueprint = lua.encode(blueprint)
-  lua_blueprint = "do local _="+lua_blueprint+";return _;end"
 
-   # Encode blueprint string
-  if string:
+  if not string:
+    lua_entities = lua.encode(bp_entities)
+    return lua_entities
+  else:
+    blueprint = {"entities": bp_entities}
+
+    # Name is optional
+    if "name" in layout.meta:
+      blueprint["name"] = layout.meta["name"]
+
+    # Icons are required
+    if "icons" in layout.meta:
+      blueprint["icons"] = [{"signal": icon, "index": i} for i, icon in enumerate(layout.meta["icons"], 1)]
+    else:
+      first_ent_name = bp_entities[0]["name"]
+      blueprint["icons"] = [{"index": 1, "signal":
+                            {"type": "item", "name": first_ent_name}}]
+
+    lua_blueprint = lua.encode(blueprint)
+    lua_blueprint = "do local _="+lua_blueprint+";return _;end"
+
+     # Encode blueprint string
     bp_string = base64.b64encode(gzip.compress(lua_blueprint.encode('utf-8'))).decode('utf-8')
     return bp_string
-  return lua_blueprint

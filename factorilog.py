@@ -79,6 +79,7 @@ class Layout:
     self.hyperwires = set()
     self.flags = {"hyperwires_named": False,
              "meta_valid": False}
+    self.meta = {}
 
   def getConnectedTerminals(self, terminal, color):
     """
